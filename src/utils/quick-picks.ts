@@ -9,7 +9,6 @@ const quickPickItems: { [index: string]: QuickPickItem[] } = {
             label: "--use-aapt2",
             detail: "Use the aapt2 binary instead of aapt",
             alwaysShow: true,
-            picked: true,
         },
         {
             label: "--debug",
