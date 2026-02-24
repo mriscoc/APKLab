@@ -1,12 +1,12 @@
-import * as child_process from "child_process";
 import * as fs from "fs";
+import * as cross_spawn from "cross-spawn";
 import * as vscode from "vscode";
 import { outputChannel } from "../data/constants";
 
 /**
  * Options for executeProcess function.
  */
-type ProcessOptions = {
+interface ProcessOptions {
     /**
      * Name of the process. Eg: `Decoding`.
      */
@@ -35,7 +35,7 @@ type ProcessOptions = {
      * Execute command using shell
      */
     shell?: boolean;
-};
+}
 
 /**
  * Executes a child_process and calls a callback if provided.
@@ -60,7 +60,7 @@ export function executeProcess(processOptions: ProcessOptions): Thenable<void> {
             return new Promise<void>((resolve) => {
                 progress.report({ message: processOptions.report });
 
-                const cp = child_process.spawn(
+                const cp = cross_spawn.spawn(
                     processOptions.command,
                     processOptions.args,
                     {
@@ -81,12 +81,11 @@ export function executeProcess(processOptions: ProcessOptions): Thenable<void> {
                     resolve();
                 });
                 cp.on("exit", async (code) => {
-                    if (
-                        code === 0 &&
-                        (processOptions.shouldExist
-                            ? fs.existsSync(processOptions.shouldExist)
-                            : true)
-                    ) {
+                    const expectedFileExists = processOptions.shouldExist
+                        ? fs.existsSync(processOptions.shouldExist)
+                        : true;
+
+                    if (code === 0 && expectedFileExists) {
                         outputChannel.appendLine(
                             `${processOptions.name} process was successful`,
                         );
@@ -97,11 +96,11 @@ export function executeProcess(processOptions: ProcessOptions): Thenable<void> {
                             await processOptions.onSuccess();
                         }
                     } else {
-                        outputChannel.appendLine(
+                        const errorMsg =
                             code !== 0
                                 ? `${processOptions.name} process exited with code ${code}`
-                                : `${processOptions.name} process didn't create ${processOptions.shouldExist}`,
-                        );
+                                : `${processOptions.name} process didn't create ${processOptions.shouldExist}`;
+                        outputChannel.appendLine(errorMsg);
                         vscode.window.showErrorMessage(
                             `APKLab: ${processOptions.name} process failed.`,
                         );
